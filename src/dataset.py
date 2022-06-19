@@ -3,6 +3,7 @@ import random
 from functools import reduce
 
 import torch
+import numpy as np
 from torch.utils.data import IterableDataset, DataLoader
 from kipoiseq.transforms.functional import one_hot, fixed_len
 
@@ -23,8 +24,8 @@ def collate_batch(batch):
         sequence_list.append(_sequence)
         label_list.append(_label)
 
-    sequence_list = [sequence_list[i] for i in indices]
-    label_list = [label_list[i] for i in indices]
+    sequence_list = np.array([sequence_list[i] for i in indices])
+    label_list = np.array([label_list[i] for i in indices])
 
     sequences = torch.tensor(sequence_list, dtype=torch.float64)
     labels = torch.tensor(label_list, dtype=torch.float32)
