@@ -6,7 +6,8 @@ import monai
 import torch
 from kipoiseq.transforms.functional import one_hot, fixed_len
 from sklearn.model_selection import train_test_split
-
+np.random.seed(0)
+torch.manual_seed(0)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -54,13 +55,13 @@ def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, re
     transforms = [ 
         OneHotEncoding(keys=["sequence"]),
         Transposed(keys=["sequence"],indices=[1,0]),
+        RandFlipd(keys=["sequence"], prob=0.5, spatial_axis=0),
         SpatialPadd(keys=["sequence"],spatial_size=[100]),
-        RandFlipd(keys=["sequence"], prob=0.5),
         ToTensord(keys=["sequence","expression"], device=DEVICE)
     ]
 
     tr_dataset = SmartCacheDataset(train, transform=transforms, replace_rate=replace_rate,
-                                   cache_rate=cache_rate)
+                                   cache_rate=cache_rate, shuffle=False)
     val_dataset = SmartCacheDataset(val, transform=transforms, replace_rate=replace_rate,
                                    cache_rate=cache_rate)
     return tr_dataset, val_dataset
@@ -72,7 +73,6 @@ if __name__ == "__main__":
     for item in torch.utils.data.DataLoader(tr_dataset, batch_size=10):
         text = item["sequence"]#.float()
         label = item["expression"]#.float()
-        print(text.size())
-        print(label)
+        print(text)
         #print(text)
         exit(0)
