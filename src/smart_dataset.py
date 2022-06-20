@@ -1,4 +1,5 @@
 from monai.data import SmartCacheDataset
+from monai.transforms import RandFlipd, ToTensord, SpatialPadd, Transposed
 import pandas as pd
 import numpy as np
 import monai
@@ -7,6 +8,7 @@ from kipoiseq.transforms.functional import one_hot, fixed_len
 from sklearn.model_selection import train_test_split
 
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 class OneHotEncoding(monai.transforms.MapTransform):
     def __init__(self, keys):
@@ -48,17 +50,29 @@ def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, re
 
     train = train.to_dict('records')
     val = val.to_dict('records')
-    tr_dataset = SmartCacheDataset(train, transform=OneHotEncoding(keys=["sequence"]), replace_rate=replace_rate,
+    
+    transforms = [ 
+        OneHotEncoding(keys=["sequence"]),
+        Transposed(keys=["sequence"],indices=[1,0]),
+        SpatialPadd(keys=["sequence"],spatial_size=[100]),
+        RandFlipd(keys=["sequence"], prob=0.5),
+        ToTensord(keys=["sequence","expression"], device=DEVICE)
+    ]
+
+    tr_dataset = SmartCacheDataset(train, transform=transforms, replace_rate=replace_rate,
                                    cache_rate=cache_rate)
-    val_dataset = SmartCacheDataset(val, transform=OneHotEncoding(keys=["sequence"]), replace_rate=replace_rate,
+    val_dataset = SmartCacheDataset(val, transform=transforms, replace_rate=replace_rate,
                                    cache_rate=cache_rate)
     return tr_dataset, val_dataset
 
 
 if __name__ == "__main__":
-    tr_dataset, val_dataset = get_dataset(max_sample_bytes=30000)
+    tr_dataset, val_dataset = get_dataset(max_sample_bytes=300000)
     # Next steps: implement batch > 1 (with padding) and flipping as augmentation
-    for item in torch.utils.data.DataLoader(tr_dataset, batch_size=1):
-        text = item["expression"]#.float()
-        print(text)
+    for item in torch.utils.data.DataLoader(tr_dataset, batch_size=10):
+        text = item["sequence"]#.float()
+        label = item["expression"]#.float()
+        print(text.size())
+        print(label)
+        #print(text)
         exit(0)
