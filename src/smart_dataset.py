@@ -12,11 +12,8 @@ class OneHotEncoding(monai.transforms.MapTransform):
         print(f"keys to square it: {self.keys}")
 
     def __call__(self, x):
-        # output = {key: self.one_hot(x[key]) for key in self.keys}
-        output = {}
-        for key in self.keys:
-            output[key] = self.one_hot(x[key])
-            output['expression'] = x['expression']
+        output = {key: self.one_hot(x[key]) for key in self.keys}
+        output['expression'] = x['expression']
         # print('output', output)
         return output
 
@@ -45,7 +42,7 @@ def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, re
     # print(tr_data[0])
     tr_data.rename(columns={0: 'sequence', 1: 'expression'}, inplace=True)
     tr_data = tr_data.to_dict('records')
-    tr_dataset = SmartCacheDataset(tr_data, transform=OneHotEncoding(keys="sequence"), replace_rate=replace_rate,
+    tr_dataset = SmartCacheDataset(tr_data, transform=OneHotEncoding(keys=["sequence"]), replace_rate=replace_rate,
                                    cache_rate=cache_rate)
     return tr_dataset
 
@@ -54,6 +51,6 @@ if __name__ == "__main__":
     tr_dataset = get_dataset(max_sample_bytes=30000)
     # Next steps: implement batch > 1 (with padding) and flipping as augmentation
     for item in torch.utils.data.DataLoader(tr_dataset, batch_size=1):
-        text = item["sequence"]
+        text = item["expression"]
         print(text)
         exit(0)
