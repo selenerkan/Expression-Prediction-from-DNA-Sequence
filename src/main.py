@@ -33,7 +33,7 @@ def train_one_epoch(epoch_index, data_loader, optimizer, net, loss_func):
         sequences, labels = data["sequence"].float().to(DEVICE), data['expression'].float().to(DEVICE)
 
         # change the order of the input shapes, final: [batch_size, channels, depth, height, width]
-        sequences = torch.permute(sequences, (0, 2, 1))
+        #sequences = torch.permute(sequences, (0, 2, 1))
         sequences = sequences.type(torch.float)
 
         #print(sequences.size())
@@ -75,10 +75,10 @@ def val_one_epoch(epoch_index, data_loader, net, loss_func):
             #print(i)
             #print(data)
             # Every data instance is an sequences + label pair
-            sequences, labels = data["sequence"].float().to(DEVICE), data['expression'].float().to(DEVICE)
+            sequences, labels = data["sequence"].float(), data['expression'].float()#.to(DEVICE)
 
             # change the order of the input shapes, final: [batch_size, channels, depth, height, width]
-            sequences = torch.permute(sequences, (0, 2, 1))
+            #sequences = torch.permute(sequences, (0, 2, 1))
             sequences = sequences.type(torch.float)
 
             #print(sequences.size())
@@ -148,6 +148,6 @@ def inference_loop():
     pass
 
 if __name__ == "__main__":
-    training_loop(  BATCH_SIZE = 1,
+    training_loop(  BATCH_SIZE = 10,
                     EPOCHS = 100,
                     LR = 1e-2,)

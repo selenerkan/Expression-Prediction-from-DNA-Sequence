@@ -56,7 +56,7 @@ def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, re
         OneHotEncoding(keys=["sequence"]),
         Transposed(keys=["sequence"],indices=[1,0]),
         RandFlipd(keys=["sequence"], prob=0.5, spatial_axis=0),
-        SpatialPadd(keys=["sequence"],spatial_size=[100]),
+        SpatialPadd(keys=["sequence"],spatial_size=[120]),
         ToTensord(keys=["sequence","expression"], device=DEVICE)
     ]
 
