@@ -1,10 +1,11 @@
 import os
 import random
 from functools import reduce
+import linecache as lc
 
 import torch
 import numpy as np
-from torch.utils.data import IterableDataset, DataLoader
+from torch.utils.data import IterableDataset, DataLoader, Dataset
 from kipoiseq.transforms.functional import one_hot, fixed_len
 
 
@@ -15,43 +16,63 @@ random.seed(13)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def transform(seq):
+    seq = seq[17:-13]  # remove primers
+    padded_seq = fixed_len(seq, 112, "start", "X")
+    one_hot_seq = one_hot(padded_seq, ["A", "C", "G", "T", "N"], "X", 0)
+    return one_hot_seq
+
+
+def complement_strand(strand):
+    nucleotides = {65: "T", 67: "G", 71: "C", 84: "A", 78: "N", 88: "X"}
+    lookup_table = ["" if i not in [65, 67, 71, 78, 84, 88] else nucleotides[i] for i in range(90)]
+
+    comp_strand = []
+    for nuc in strand:
+        index = ord(nuc)
+        comp_nuc = lookup_table[index]
+        comp_strand.append(comp_nuc)
+
+    comp_strand = "".join(comp_strand)
+    return comp_strand
+
+
 def collate_batch(batch):
-    sequence_list, label_list = [], []
+
+    seq_list, label_list = [], []
+    comp_seq_list, comp_label_list = [], []
+
     indices = [i for i in range(len(batch))]
     random.shuffle(indices)
-
+    print("Batch Size: ", len(batch))
     for (_sequence, _label) in batch:
-        sequence_list.append(_sequence)
-        label_list.append(_label)
+        seq_list.append(transform(_sequence))
+        label_list.append(np.array(_label, np.float32))
+        comp_seq_list.append(transform(complement_strand(_sequence)))
 
-    sequence_list = np.array([sequence_list[i] for i in indices])
-    label_list = np.array([label_list[i] for i in indices])
+    sequences = np.array(seq_list + comp_seq_list)
+    labels = np.array(label_list)
 
-    sequences = torch.tensor(sequence_list, dtype=torch.float64)
-    labels = torch.tensor(label_list, dtype=torch.float32)
+    sequences = torch.tensor(sequences).permute(0, 2, 1).float()
+    labels = torch.tensor(labels).float()
     return sequences.to(device), labels.to(device)
 
 
-one_hot_encode = lambda seq: one_hot(seq, ["A", "C", "G", "T", "N"], "X", 0)
-remove_primers = lambda seq: seq[17:-13]
-pad_sequences = lambda seq: fixed_len(seq, 112, "start", "X")
-transforms = [remove_primers, pad_sequences, one_hot_encode]
+class PromoterDataset(Dataset):
 
-
-class PromoterSeqDataset(IterableDataset):
-
-    def __init__(self, root_dir, filename, transforms):
-        self.root_dir = root_dir
+    def __init__(self, dir, filename):
+        self.dir = dir
         self.filename = filename
-        self.transforms = transforms
 
-    def read_file(self):
-        with open(os.path.join(self.root_dir, self.filename), "r") as file_obj:
-            for line in file_obj:
-                sample = line.strip("\n").split("\t")
-                seq, label = sample[0], sample[1]
-                seq, label = reduce(lambda arg, f: f(arg), self.transforms, seq), float(label)
-                yield seq, label
+        with open(os.path.join(dir, filename), 'r') as fp:
+            self.length = len(fp.readlines())
 
-    def __iter__(self):
-        return self.read_file()
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        line = lc.getline(os.path.join(self.dir, self.filename), idx+1)
+        sample = line.strip("\n").split("\t")
+        seq, label = sample[0], sample[1]
+        return seq, label
+
