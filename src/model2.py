@@ -11,16 +11,19 @@ class PromoterNet(nn.Module):
         # larger kernel size
         # no lstm at the top of transformer
         # we should make sure all receptive fields are covered
-        self.conv1 = nn.Conv1d(in_channels=5, out_channels=16, kernel_size=10, stride=1)  # Feature Maps: (103, 16)
-        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (51, 16)
-        self.conv2 = nn.Conv1d(in_channels=16, out_channels=64, kernel_size=6, stride=1)  # Feature Maps: (46, 64)
-        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (23, 64)
-        self.conv3 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3)  # Feature Maps: (21, 128)
-        self.pool3 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (10, 128)
-        self.flatten = nn.Flatten()  # Feature Vectors: (1280, 1)
-        self.fc1 = nn.Linear(1280 * 2, 1280)
-        self.fc2 = nn.Linear(1280, 640)
-        self.fc3 = nn.Linear(640, 1)
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=64, kernel_size=16, stride=1)  # Feature Maps: (97, 64)
+        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (48, 64)
+        self.conv2 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=6, stride=1)  # Feature Maps: (43, 128)
+        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (21, 128)
+        self.conv3 = nn.Conv1d(in_channels=128, out_channels=256, kernel_size=3)  # Feature Maps: (19, 256)
+        self.pool3 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (9, 256)
+        self.flatten = nn.Flatten()  # Feature Vectors: (2560, 1)
+        self.fc1 = nn.Linear(2304 * 2, 1152)
+        self.fc2 = nn.Linear(1152, 1)
+
+        """self.conv4 = nn.Conv2d(in_channels=2304 * 2, out_channels=2304, kernel_size=(1, 1))
+        self.conv5 = nn.Conv2d(in_channels=2304, out_channels=1152, kernel_size=(1, 1))
+        self.conv6 = nn.Conv2d(in_channels=1152, out_channels=1, kernel_size=(1, 1))"""
 
     def forward(self, x):
         x = self.pool1(F.relu(self.conv1(x)))
@@ -34,7 +37,6 @@ class PromoterNet(nn.Module):
         features_all = torch.cat((features, features_comp), dim=1)  # 512
 
         x = F.relu(self.fc1(features_all))
-        x = F.relu(self.fc2(x))
-        out = self.fc3(x)
+        out = F.relu(self.fc2(x))
 
         return torch.squeeze(out)
