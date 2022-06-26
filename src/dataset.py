@@ -42,9 +42,6 @@ def collate_batch(batch):
     seq_list, label_list = [], []
     comp_seq_list, comp_label_list = [], []
 
-    indices = [i for i in range(len(batch))]
-    random.shuffle(indices)
-    print("Batch Size: ", len(batch))
     for (_sequence, _label) in batch:
         seq_list.append(transform(_sequence))
         label_list.append(np.array(_label, np.float32))
