@@ -13,6 +13,8 @@ from torchsummary import summary
 from early_stopping import *
 from choose_subsequences import *
 import os
+np.random.seed(0)
+torch.manual_seed(0)
 
 # *************************************** DATA CREATION **************************************************
 train_dir = "../data/train_sequences.txt"
@@ -23,7 +25,7 @@ valid_subset_dir = "../data/valid_subsequences.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(100_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
+create_sub_dataset(1_000_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
 # *********************************************************************************************************
 
@@ -37,8 +39,8 @@ valid_filename = "valid_subsequences.txt"
 train_set = PromoterDataset(root_dir, train_filename)
 valid_set = PromoterDataset(root_dir, valid_filename)
 
-train_loader = DataLoader(train_set, batch_size=512, collate_fn=collate_batch)
-valid_loader = DataLoader(valid_set, batch_size=512, collate_fn=collate_batch)
+train_loader = DataLoader(train_set, batch_size=1024, collate_fn=collate_batch)
+valid_loader = DataLoader(valid_set, batch_size=1024, collate_fn=collate_batch)
 
 model = PromoterNet()
 model = model.to(device)
@@ -52,8 +54,9 @@ file = open("../results/train_results.txt", "w")
 early_stopping = EarlyStopping(patience=8)
 train_loss_list, valid_loss_list = [], []
 train_r2_list, valid_r2_list = [], []
+n_max_epochs = 50
 
-for epoch in range(40):
+for epoch in range(n_max_epochs):
 
     model.train()
     train_loss, train_r2 = 0.0, 0.0
@@ -79,7 +82,7 @@ for epoch in range(40):
     ave_train_loss = train_loss / len(train_loader)
     ave_train_r2 = train_r2 / len(train_loader)
     train_loss_list.append(ave_train_loss.cpu())
-    train_r2_list.append(ave_train_r2.cpu())
+    train_r2_list.append(ave_train_r2)
 
     print(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}")
     file.write(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}\n")
@@ -117,7 +120,7 @@ for epoch in range(40):
     torch.save(model.state_dict(), os.path.join(save_dir, save_file_name))
     linecache.clearcache()
 
-epochs = range(1, 71)
+epochs = range(1, n_max_epochs+1)
 plt.plot(epochs, train_loss_list, color="blue", label="training_loss")
 plt.plot(epochs, valid_loss_list, color="red", label="validation_loss")
 plt.legend()

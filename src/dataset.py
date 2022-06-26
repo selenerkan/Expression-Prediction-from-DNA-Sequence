@@ -1,5 +1,4 @@
 import os
-import random
 from functools import reduce
 import linecache as lc
 
@@ -12,7 +11,6 @@ from kipoiseq.transforms.functional import one_hot, fixed_len
 # primer 1: TGCATTTTTTTCACATC
 # primer 2: GGTTACGGCTGTT
 
-random.seed(13)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

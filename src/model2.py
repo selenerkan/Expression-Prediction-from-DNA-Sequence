@@ -17,7 +17,7 @@ class PromoterNet(nn.Module):
         self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (21, 128)
         self.conv3 = nn.Conv1d(in_channels=128, out_channels=256, kernel_size=3)  # Feature Maps: (19, 256)
         self.pool3 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (9, 256)
-        self.flatten = nn.Flatten()  # Feature Vectors: (2560, 1)
+        self.flatten = nn.Flatten()  # Feature Vectors: (2304, 1)
         self.fc1 = nn.Linear(2304 * 2, 1152)
         self.fc2 = nn.Linear(1152, 1)
 
