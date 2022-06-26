@@ -1,4 +1,3 @@
-import random
 from sklearn.model_selection import train_test_split
 import numpy as np
 
@@ -94,7 +93,7 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
     # n and k numbers of complete and missing sequences are chosen randomly above.
     # The lists of these sequences are combined and shuffled.
     sequences = comp_sequences + miss_sequences
-    random.shuffle(sequences)
+    np.random.shuffle(sequences)
 
     # Shuffled sequence list is divided into train and test (validation).
     # Each line that has been read in if-statements contain both sequence and label
