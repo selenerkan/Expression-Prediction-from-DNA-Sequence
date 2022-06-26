@@ -6,28 +6,28 @@ import torch
 import torchmetrics.functional as metrics_F
 from torch.utils.data import random_split
 
-from src.model2 import *
-from src.dataset2 import *
+from model2 import *
+from dataset import *
 from torchsummary import summary
 
-from utility.early_stopping import *
-from utility.choose_subsequences import *
+from early_stopping import *
+from choose_subsequences import *
+import os
 
-"""
 # *************************************** DATA CREATION **************************************************
-train_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_sequences.txt"
-train_comp_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_comp_sequences.txt"
-train_miss_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_missing_sequences.txt"
-train_subset_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_subsequences.txt"
-valid_subset_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/valid_subsequences.txt"
+train_dir = "../data/train_sequences.txt"
+train_comp_dir = "../data/train_comp_sequences.txt"
+train_miss_dir = "../data/train_missing_sequences.txt"
+train_subset_dir = "../data/train_subsequences.txt"
+valid_subset_dir = "../data/valid_subsequences.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
 create_sub_dataset(100_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
-# *********************************************************************************************************"""
+# *********************************************************************************************************
 
-root_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data"
+root_dir = "../data"
 train_filename = "train_subsequences.txt"
 valid_filename = "valid_subsequences.txt"
 
@@ -48,7 +48,7 @@ loss_fn = torch.nn.MSELoss()
 r2_metric_fn = metrics_F.r2_score
 optimizer = torch.optim.Adam(model.parameters(), lr=0.007, weight_decay=0.003)
 
-file = open("/Users/goktug/PycharmProjects/ML4RG Project/data/train_results.txt", "w")
+file = open("../results/train_results.txt", "w")
 early_stopping = EarlyStopping(patience=8)
 train_loss_list, valid_loss_list = [], []
 train_r2_list, valid_r2_list = [], []
@@ -67,49 +67,52 @@ for epoch in range(40):
 
         outputs = model(seqs)
         loss = loss_fn(outputs, labels)
-        r2_value = r2_metric_fn(outputs, labels)
 
         loss.backward()
         optimizer.step()
 
         train_loss += loss.detach()
-        train_r2 += r2_value
+
+        r2_value = r2_metric_fn(outputs.cpu().detach(), labels.cpu().detach())
+        train_r2 += r2_value.item()
 
     ave_train_loss = train_loss / len(train_loader)
     ave_train_r2 = train_r2 / len(train_loader)
-    #train_loss_list.append(ave_train_loss)
-    #train_r2_list.append(ave_train_r2)
+    train_loss_list.append(ave_train_loss.cpu())
+    train_r2_list.append(ave_train_r2.cpu())
 
     print(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}")
     file.write(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}\n")
 
-    del loss, outputs
+    #del loss, outputs
     model.eval()
-    for i, data in enumerate(valid_loader):
+    with torch.no_grad():
+        for i, data in enumerate(valid_loader):
 
-        seqs, labels = data[0], data[1]
-        outputs = model(seqs)
-        loss = loss_fn(outputs, labels)
-        r2_value = r2_metric_fn(outputs, labels)
+            seqs, labels = data[0], data[1]
+            outputs = model(seqs)
+            loss = loss_fn(outputs, labels)
+            r2_value = r2_metric_fn(outputs, labels)
 
-        valid_loss += loss.detach()
-        valid_r2 += r2_value
+            valid_loss += loss#.detach()
+            valid_r2 += r2_value
 
-    average_loss = valid_loss / len(valid_loader)
-    early_stopping.step(average_loss)
-    if early_stopping.check_patience():
-        break
+        average_loss = valid_loss / len(valid_loader)
+        early_stopping.step(average_loss)
+        if early_stopping.check_patience():
+            break
 
-    ave_valid_loss = valid_loss / len(valid_loader)
-    ave_valid_r2 = valid_r2 / len(valid_loader)
-    #valid_loss_list.append(ave_valid_loss)
-    #valid_r2_list.append(ave_valid_r2)
+        ave_valid_loss = valid_loss / len(valid_loader)
+        ave_valid_r2 = valid_r2 / len(valid_loader)
+        valid_loss_list.append(ave_valid_loss.cpu())
+        valid_r2_list.append(ave_valid_r2.cpu())
 
-    print(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}")
-    file.write(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}\n")
-    del loss, outputs
-
-    save_dir = "/Users/goktug/PycharmProjects/ML4RG Project/models"
+        print(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}")
+        file.write(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}\n")
+    #del loss, outputs
+    save_dir = "../models"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     save_file_name = "model4-" + str(epoch) + ".pth"
     torch.save(model.state_dict(), os.path.join(save_dir, save_file_name))
     linecache.clearcache()
