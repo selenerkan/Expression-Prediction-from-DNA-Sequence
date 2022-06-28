@@ -48,7 +48,7 @@ summary(model, input_size=(5, 112))
 
 loss_fn = torch.nn.MSELoss()
 r2_metric_fn = metrics_F.r2_score
-optimizer = torch.optim.Adam(model.parameters(), lr=0.007, weight_decay=0.003)
+optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.001)
 
 file = open("../results/train_results.txt", "w")
 early_stopping = EarlyStopping(patience=8)
