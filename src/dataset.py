@@ -53,6 +53,7 @@ def collate_batch(batch):
     labels = torch.tensor(labels).float()
     return sequences.to(device), labels.to(device)
 
+# positional encoder function 
 def positional_encoder(sequence):
     d_model =  sequence.shape[1]
     max_seq_len = sequence.shape[0]
@@ -71,7 +72,7 @@ def positional_encoder(sequence):
     
     return pe
             
-
+# to implement positional encoders in dataloader class
 def collate_batch_transformers(batch):
 
     seq_list, label_list = [], []
