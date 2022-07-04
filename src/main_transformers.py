@@ -25,7 +25,7 @@ valid_subset_dir = root_dir + "/valid_subsequences.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(1_000_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
+create_sub_dataset(10_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
 # *********************************************************************************************************
 
@@ -53,8 +53,8 @@ create_sub_dataset(1_000_000, 0, train_comp_dir, train_miss_dir, train_subset_di
 train_set = PromoterDataset(root_dir, train_filename)
 valid_set = PromoterDataset(root_dir, valid_filename)
 
-train_loader = DataLoader(train_set, batch_size=3, collate_fn=collate_batch)
-valid_loader = DataLoader(valid_set, batch_size=3, collate_fn=collate_batch)
+train_loader = DataLoader(train_set, batch_size=1024, collate_fn=collate_batch)
+valid_loader = DataLoader(valid_set, batch_size=1024, collate_fn=collate_batch)
 
 model = TransformerNet()
 model = model.to(device)
@@ -77,7 +77,6 @@ for epoch in range(n_max_epochs):
     valid_loss, valid_r2 = 0.0, 0.0
 
     for i, data in enumerate(train_loader):
-        print('start')
         seqs, labels = data[0], data[1]
         optimizer.zero_grad()
 

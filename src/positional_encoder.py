@@ -1,34 +1,31 @@
 import torch
 import torch.nn as nn
 import math
+from torch import Tensor
 from torch.autograd import Variable
 import numpy as np
 
 
-class PositionalEncoder(nn.Module):
-    def __init__(self, d_model=5, max_seq_len=112, n=10_000):
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, d_model=5, dropout=0.1, max_len=112):
         super().__init__()
-        pe = torch.zeros(max_seq_len, d_model, dtype=torch.float)
+        self.dropout = nn.Dropout(p=dropout)
 
-        # iterate through every value in our 1 hot encoded sequence
-        for pos in range(max_seq_len):  # position of the current nucleotide (length of the sequence)
-            for i in np.arange(int(d_model / 2)):  # position of the 1hot encoding dimension (sample number)
-                denominator = np.power(n, 2 * i / d_model)
-                pe[pos, 2 * i] = math.sin(pos / denominator)
-                pe[pos, 2 * i + 1] = math.cos(pos / denominator)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
 
-        pe = pe.unsqueeze(0)
-
+        pe = torch.permute(pe, (1, 2, 0))
         self.register_buffer('pe', pe)
 
-    def forward(self, x):
-        # make embeddings relatively larger
-        # x = x * math.sqrt(d_model)
-        # add constant to embedding
-        # seq_len = x.size(2)
-
-        # transpose the positional encoder
-        pe = torch.transpose(self.pe, 1, 2)
-
-        x = x + pe
-        return x
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x: Tensor, shape [seq_len, batch_size, embedding_dim]
+        """
+        # pe = torch.transpose(self.pe, 1, 2) [1024, 5, 512] [1, 512, 5]
+        x = x + self.pe
+        return self.dropout(x)

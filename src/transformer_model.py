@@ -20,7 +20,7 @@ class TransformerNet(nn.Module):
         self.pool3 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (5, 256)
 
         # add positional encodings
-        self.positional_encoding = PositionalEncoder(d_model=512, max_seq_len=5)
+        self.positional_encoding = PositionalEncoding(d_model=512, max_len=5)
 
         # d_model = size of input embeddings, nhead = the number of parallel heads, dk = dv = d_model / nhead
         # One sub_attention_fc module takes an input of NxLxD_model shape and produces output of NxLxD_model shape
