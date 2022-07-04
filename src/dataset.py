@@ -7,6 +7,7 @@ import numpy as np
 from torch.utils.data import IterableDataset, DataLoader, Dataset
 from kipoiseq.transforms.functional import one_hot, fixed_len
 
+import math 
 
 # primer 1: TGCATTTTTTTCACATC
 # primer 2: GGTTACGGCTGTT
@@ -52,6 +53,57 @@ def collate_batch(batch):
     labels = torch.tensor(labels).float()
     return sequences.to(device), labels.to(device)
 
+# positional encoder function 
+def positional_encoder(sequence):
+    d_model =  sequence.shape[1]
+    max_seq_len = sequence.shape[0]
+    
+    # create the positional encoding matrix with zeros
+    # this matrix has shape (sequence length x encoding dimension)
+    pe = np.zeros((max_seq_len, d_model))
+
+    # iterate through every value in our 1 hot encoded sequence
+    for pos in range(max_seq_len): # position of the current nucleotide
+        for i in range(0, d_model - 1, 2): # position of the 1hot encoding dimension (1 to 5)
+            pe[pos, i] = \
+            math.sin(pos / (10000 ** ((2 * i)/d_model)))
+            pe[pos, i + 1] = \
+            math.cos(pos / (10000 ** ((2 * (i + 1))/d_model)))
+    
+    return pe
+            
+# to implement positional encoders in dataloader class
+def collate_batch_transformers(batch):
+
+    seq_list, label_list = [], []
+    comp_seq_list, comp_label_list = [], []
+
+    for (_sequence, _label) in batch:
+        
+        # get the complementary strand from sequence
+        _comp_strand = complement_strand(_sequence)
+
+        # add sequence to the list
+        _sequence = transform(_sequence)
+
+        # get positional encodings (this is the same for seq and comp_seq)
+        pe = positional_encoder(_sequence)
+        _sequence = _sequence + pe
+        seq_list.append(_sequence)
+
+        label_list.append(np.array(_label, np.float32))
+        
+        # add comp_strand to the list
+        _comp_strand = transform(_comp_strand)
+        _comp_strand = _comp_strand + pe
+        comp_seq_list.append(_comp_strand)
+
+    sequences = np.array(seq_list + comp_seq_list)
+    labels = np.array(label_list)
+
+    sequences = torch.tensor(sequences).permute(0, 2, 1).float()
+    labels = torch.tensor(labels).float()
+    return sequences.to(device), labels.to(device)
 
 class PromoterDataset(Dataset):
 
