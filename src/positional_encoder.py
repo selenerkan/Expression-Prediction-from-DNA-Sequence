@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import math
 from torch import Tensor
-from torch.autograd import Variable
-import numpy as np
 
 
 class PositionalEncoding(nn.Module):

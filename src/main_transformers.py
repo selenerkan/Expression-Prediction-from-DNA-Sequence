@@ -1,16 +1,30 @@
-from dataset import *
-from positional_encoder import *
-
+import torch
+import os
 import linecache
-import os.path
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
 
-from utility.early_stopping import *
-from utility.choose_subsequences import *
+from utility.early_stopping import EarlyStopping
+from utility.choose_subsequences import complete_sequences, missing_sequences, create_sub_dataset
 from torchsummary import summary
 import torchmetrics.functional as metrics_F
 
-from transformer_model import *
+from transformer_model import ConvTransformer, TransformerNet
+from dataset import PromoterDataset, collate_batch
+
+np.random.seed(0)
+torch.manual_seed(0)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("RUNS ON:",device)
+
+# *************************************** PARAMETERS **************************************************
+
+MAX_EPOCHS = 50
+BATCH_SIZE = 1024
+MAX_SEQ = 1_000_000
+LR = 0.001
+REG = 0.001
 
 root_dir = "../data"
 train_filename = "train_subsequences.txt"
@@ -25,52 +39,33 @@ valid_subset_dir = root_dir + "/valid_subsequences.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(10_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
-
-# *********************************************************************************************************
-
-# train_set = PromoterDataset(root_dir, train_filename)
-# valid_set = PromoterDataset(root_dir, valid_filename)
-
-
-# train_loader = DataLoader(train_set, batch_size=10, collate_fn=collate_batch)
-# valid_loader = DataLoader(valid_set, batch_size=10, collate_fn=collate_batch)
-
-# # use positional enoders from the postional encoder class
-# # implement this inside the transformers class before calling the model
-# for i, data in enumerate(train_loader):
-
-#     seqs, labels = data[0], data[1]
-#     pos_encoder = PositionalEncoder(d_model=seqs.shape[1], max_seq_len = seqs.shape[2])
-
-#     seqs = pos_encoder(seqs)
-#     print(seqs.size())
-#     print(seqs)
-#     break
+create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
 # *********************************************************************************************************
 
 train_set = PromoterDataset(root_dir, train_filename)
 valid_set = PromoterDataset(root_dir, valid_filename)
 
-train_loader = DataLoader(train_set, batch_size=1024, collate_fn=collate_batch)
-valid_loader = DataLoader(valid_set, batch_size=1024, collate_fn=collate_batch)
+train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
+valid_loader = DataLoader(valid_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
 
-model = TransformerNet()
+# uses positional enoders from the postional encoder class
+# implement this inside the transformers class before calling the model
+model = ConvTransformer()
 model = model.to(device)
-# summary(model, input_size=(5, 112))
+summary(model, input_size=(5, 112))
 
 loss_fn = torch.nn.MSELoss()
 r2_metric_fn = metrics_F.r2_score
-optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.001)
+optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
 
 file = open("../results/train_results_transformers.txt", "w")
 early_stopping = EarlyStopping(patience=8)
 train_loss_list, valid_loss_list = [], []
 train_r2_list, valid_r2_list = [], []
-n_max_epochs = 50
 
-for epoch in range(n_max_epochs):
+# *************************************************** TRAINING LOOP ******************************************************
+for epoch in range(MAX_EPOCHS):
 
     model.train()
     train_loss, train_r2 = 0.0, 0.0
@@ -99,6 +94,8 @@ for epoch in range(n_max_epochs):
     print(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}")
     file.write(f"Train Epoch {epoch + 1} Loss: {ave_train_loss:.4f}, R2-Score: {ave_train_r2:.4f}\n")
 
+# *************************************************** VALIDATION ******************************************************
+
     # del loss, outputs
     model.eval()
     with torch.no_grad():
@@ -124,14 +121,16 @@ for epoch in range(n_max_epochs):
         print(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}")
         file.write(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}\n")
     # del loss, outputs
-    save_dir = "../models"
+    save_dir = "../models-transformers"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     save_file_name = "model4-" + str(epoch) + ".pth"
     torch.save(model.state_dict(), os.path.join(save_dir, save_file_name))
     linecache.clearcache()
 
-epochs = range(1, n_max_epochs + 1)
+# *************************************************** COLLECTING RESULTS ******************************************************
+
+epochs = range(1, MAX_EPOCHS + 1)
 plt.plot(epochs, train_loss_list, color="blue", label="training_loss")
 plt.plot(epochs, valid_loss_list, color="red", label="validation_loss")
 plt.legend()
