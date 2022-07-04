@@ -6,8 +6,6 @@ import numpy as np
 from torch.utils.data import Dataset
 from kipoiseq.transforms.functional import one_hot, fixed_len
 
-import math 
-
 # primer 1: TGCATTTTTTTCACATC
 # primer 2: GGTTACGGCTGTT
 
@@ -33,7 +31,6 @@ def complement_strand(strand):
 
     comp_strand = "".join(comp_strand)
     return comp_strand
-
 
 def collate_batch(batch):
 

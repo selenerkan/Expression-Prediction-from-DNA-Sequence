@@ -1,6 +1,7 @@
 import torch
 import os
 import linecache
+import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
