@@ -49,11 +49,38 @@ def collate_batch(batch):
     labels = torch.tensor(labels).float()
     return sequences.to(device), labels.to(device)
 
+def GetLabels(num_classes = 500):
+    """parses through the training data and returns the frequently occurring 500 classes"""
+
+    n = 300000 #Parse ever n lines at a time
+    filename = "../data/train_sequences.txt"
+    classes = np.array([])
+    with open(filename) as my_file:
+        num_lines = len(my_file.readlines()) #Maximum lines in the file
+    my_file.close()
+    with open(filename) as my_file:
+        line = 0
+        while line < num_lines:
+
+            head = np.array([next(my_file).strip('\n').replace('\t', ' ').split(' ') for x in range(line, line+n)])
+            classes = np.append(classes, head[:,1])
+            line = line+n
+
+            if line + n > num_lines:
+                n = num_lines - line
+    #file = np.genfromtxt(filename, max_rows=3)
+    unique, counts = np.unique(classes, return_counts=True)
+    idx = counts.argsort()
+    classes_new = unique[idx]
+    top_classes = classes_new[-1*num_classes:].astype(np.float)
+    return top_classes
+
 class PromoterDataset(Dataset):
 
-    def __init__(self, dir, filename):
+    def __init__(self, dir, filename,classes):
         self.dir = dir
         self.filename = filename
+        self.classes = classes
 
         with open(os.path.join(dir, filename), 'r') as fp:
             self.length = len(fp.readlines())
@@ -62,8 +89,14 @@ class PromoterDataset(Dataset):
         return self.length
 
     def __getitem__(self, idx):
+
+
         line = lc.getline(os.path.join(self.dir, self.filename), idx+1)
         sample = line.strip("\n").split("\t")
-        seq, label = sample[0], sample[1]
+        seq, label_temp = sample[0], sample[1]
+        difference_array = np.absolute(self.classes-label_temp)
+        label_temp = difference_array.argmin() #index of the class
+        label = np.zeros(500)
+        label[label_temp] = 1
         return seq, label
 

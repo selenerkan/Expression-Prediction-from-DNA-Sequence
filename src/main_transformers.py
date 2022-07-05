@@ -11,7 +11,7 @@ from torchsummary import summary
 import torchmetrics.functional as metrics_F
 
 from transformer_model import ConvTransformer, TransformerNet
-from dataset import PromoterDataset, collate_batch
+from dataset import PromoterDataset, collate_batch, GetLabels
 
 np.random.seed(0)
 torch.manual_seed(0)
@@ -43,9 +43,9 @@ missing_sequences(train_dir, train_miss_dir)
 create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
 # *********************************************************************************************************
-
-train_set = PromoterDataset(root_dir, train_filename)
-valid_set = PromoterDataset(root_dir, valid_filename)
+classes = GetLabels(num_classes = 500)
+train_set = PromoterDataset(root_dir, train_filename, classes)
+valid_set = PromoterDataset(root_dir, valid_filename, classes)
 
 train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
 valid_loader = DataLoader(valid_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
