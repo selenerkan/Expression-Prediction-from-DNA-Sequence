@@ -6,6 +6,7 @@ import monai
 import torch
 from kipoiseq.transforms.functional import one_hot, fixed_len
 from sklearn.model_selection import train_test_split
+import time
 np.random.seed(0)
 torch.manual_seed(0)
 
@@ -29,7 +30,7 @@ class OneHotEncoding(monai.transforms.MapTransform):
         return seq
 
 
-def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, replace_rate=0.2, cache_rate=0.02):
+def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, replace_rate=0.2, cache_rate=0.2):
     f = open(filename, "r")
     lines = f.readlines(max_sample_bytes)
     f.close()
@@ -68,11 +69,22 @@ def get_dataset(filename=r"../data/train_sequences.txt", max_sample_bytes=-1, re
 
 
 if __name__ == "__main__":
-    tr_dataset, val_dataset = get_dataset(max_sample_bytes=300000)
+    tr_dataset, val_dataset = get_dataset(max_sample_bytes=-1)
     # Next steps: implement batch > 1 (with padding) and flipping as augmentation
-    for item in torch.utils.data.DataLoader(tr_dataset, batch_size=10):
-        text = item["sequence"]#.float()
-        label = item["expression"]#.float()
-        print(text)
+    tr_loader = torch.utils.data.DataLoader(tr_dataset, batch_size=10)
+    start = time.time()
+    for item in tr_loader:
+        #text = item["sequence"]#.float()
+        #label = item["expression"]#.float()
         #print(text)
-        exit(0)
+        #print(text)
+        #exit(0)
+        continue
+    end = time.time()
+    print(end-start)
+
+    start = time.time()
+    for item in tr_loader:
+        continue
+    end = time.time()
+    print(end-start)

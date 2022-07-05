@@ -54,7 +54,7 @@ valid_loader = DataLoader(valid_set, batch_size=BATCH_SIZE, collate_fn=collate_b
 # implement this inside the transformers class before calling the model
 model = ConvTransformer()
 model = model.to(device)
-summary(model, input_size=(5, 112))
+#summary(model, input_size=(5, 112))
 
 loss_fn = torch.nn.MSELoss()
 r2_metric_fn = metrics_F.r2_score

@@ -103,9 +103,9 @@ class ConvTransformer(nn.Module):
         self.fc2 = nn.Linear(transformer_size//2, 1)
 
     def forward(self, x):
-        # x = self.pool1(F.relu(self.conv1(x)))
-        # x = self.pool2(F.relu(self.conv2(x)))
-        # x = self.pool3(F.relu(self.conv3(x)))
+        x = self.pool1(F.relu(self.conv1(x)))
+        x = self.pool2(F.relu(self.conv2(x)))
+        x = self.pool3(F.relu(self.conv3(x)))
 
         batch_size = x.shape[0]  # 1024
         half = int(batch_size / 2)

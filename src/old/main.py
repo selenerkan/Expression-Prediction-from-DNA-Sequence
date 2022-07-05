@@ -2,6 +2,7 @@ import torch
 #from torchsummary import summary
 from torch.optim import Adam
 from torch.utils.data import DataLoader
+from sklearn.metrics import r2_score
 import time
 
 from model import *
@@ -71,6 +72,8 @@ def val_one_epoch(epoch_index, data_loader, net, loss_func):
         # Here, we use enumerate(training_loader) instead of
         # iter(training_loader) so that we can track the batch
         # index and do some intra-epoch reporting
+        all_outputs = []
+        all_labels = []
         for i, data in enumerate(data_loader):
             #print(i)
             #print(data)
@@ -88,7 +91,8 @@ def val_one_epoch(epoch_index, data_loader, net, loss_func):
 
             # Compute the loss and its gradients
             loss = loss_func(outputs, labels)
-
+            all_labels += labels.cpu().numpy().tolist()
+            all_outputs += outputs.cpu().numpy().tolist()
             # Gather data and report
             total_loss += loss.item()
 
@@ -98,6 +102,9 @@ def val_one_epoch(epoch_index, data_loader, net, loss_func):
             #     # tb_x = epoch_index * len(train_loader) + i + 1
             #     # tb_writer.add_scalar('Loss/train', last_loss, tb_x)
             #     running_loss = 0.
+    all_outputs = np.array(all_outputs)
+    all_labels = np.array(all_labels)
+    print("R2:",r2_score(all_labels,all_outputs))
     net.train() # Switch back to training mode for the model.
     return total_loss
 
@@ -110,7 +117,7 @@ def training_loop(  BATCH_SIZE = 1,
     net = PromoterNet().to(DEVICE)
     optimizer = Adam(net.parameters(),lr=LR)
 
-    tr_dataset, val_dataset = get_dataset(filename=DATA_DIR, max_sample_bytes=-1)
+    tr_dataset, val_dataset = get_dataset(filename=DATA_DIR, max_sample_bytes=-1, replace_rate=0.2, cache_rate=0.2)
     train_loader = DataLoader(tr_dataset, batch_size=BATCH_SIZE)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
 
@@ -148,6 +155,6 @@ def inference_loop():
     pass
 
 if __name__ == "__main__":
-    training_loop(  BATCH_SIZE = 10,
+    training_loop(  BATCH_SIZE = 1024,
                     EPOCHS = 100,
                     LR = 1e-2,)
