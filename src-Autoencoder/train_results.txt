@@ -1,0 +1,99 @@
+Train Epoch 1 Loss: 0.7733 Time: 380.4814
+
+Train Epoch 2 Loss: 0.6238 Time: 384.1267
+
+Train Epoch 3 Loss: 0.5489 Time: 380.3687
+
+Train Epoch 4 Loss: 0.4970 Time: 377.8368
+
+Train Epoch 5 Loss: 0.4571 Time: 377.1520
+
+Train Epoch 6 Loss: 0.4287 Time: 376.9913
+
+Train Epoch 7 Loss: 0.4055 Time: 378.2706
+
+Train Epoch 8 Loss: 0.3860 Time: 377.4212
+
+Train Epoch 9 Loss: 0.3693 Time: 377.2355
+
+Train Epoch 10 Loss: 0.3563 Time: 376.8559
+
+Train Epoch 11 Loss: 0.3465 Time: 377.1502
+
+Train Epoch 12 Loss: 0.3389 Time: 376.9464
+
+Train Epoch 13 Loss: 0.3326 Time: 377.0327
+
+Train Epoch 14 Loss: 0.3275 Time: 376.4376
+
+Train Epoch 15 Loss: 0.3229 Time: 376.3929
+
+Train Epoch 16 Loss: 0.3186 Time: 376.9488
+
+Train Epoch 17 Loss: 0.3147 Time: 376.7901
+
+Train Epoch 18 Loss: 0.3109 Time: 376.7230
+
+Train Epoch 19 Loss: 0.3072 Time: 376.6697
+
+Train Epoch 20 Loss: 0.3036 Time: 377.3381
+
+Train Epoch 21 Loss: 0.3002 Time: 377.2664
+
+Train Epoch 22 Loss: 0.2969 Time: 379.3551
+
+Train Epoch 23 Loss: 0.2936 Time: 376.9957
+
+Train Epoch 24 Loss: 0.2905 Time: 378.1986
+
+Train Epoch 25 Loss: 0.2872 Time: 377.5409
+
+Train Epoch 26 Loss: 0.2842 Time: 377.5135
+
+Train Epoch 27 Loss: 0.2812 Time: 377.1887
+
+Train Epoch 28 Loss: 0.2784 Time: 377.1234
+
+Train Epoch 29 Loss: 0.2760 Time: 376.7578
+
+Train Epoch 30 Loss: 0.2736 Time: 376.5235
+
+Train Epoch 31 Loss: 0.2715 Time: 377.1296
+
+Train Epoch 32 Loss: 0.2694 Time: 377.3487
+
+Train Epoch 33 Loss: 0.2674 Time: 376.9802
+
+Train Epoch 34 Loss: 0.2656 Time: 376.9105
+
+Train Epoch 35 Loss: 0.2638 Time: 376.9746
+
+Train Epoch 36 Loss: 0.2621 Time: 376.7834
+
+Train Epoch 37 Loss: 0.2606 Time: 376.7054
+
+Train Epoch 38 Loss: 0.2593 Time: 376.6874
+
+Train Epoch 39 Loss: 0.2580 Time: 375.8300
+
+Train Epoch 40 Loss: 0.2569 Time: 376.7368
+
+Train Epoch 41 Loss: 0.2558 Time: 376.2376
+
+Train Epoch 42 Loss: 0.2548 Time: 376.0214
+
+Train Epoch 43 Loss: 0.2539 Time: 376.2594
+
+Train Epoch 44 Loss: 0.2530 Time: 376.5559
+
+Train Epoch 45 Loss: 0.2522 Time: 376.6508
+
+Train Epoch 46 Loss: 0.2512 Time: 376.5908
+
+Train Epoch 47 Loss: 0.2500 Time: 376.2901
+
+Train Epoch 48 Loss: 0.2491 Time: 376.6272
+
+Train Epoch 49 Loss: 0.2483 Time: 376.5868
+
+Train Epoch 50 Loss: 0.2475 Time: 376.8908
