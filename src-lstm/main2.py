@@ -137,5 +137,7 @@ def plot():
 
 try:
     epoch = training_loop(n_max_epochs)
+    plot()
+
 except KeyboardInterrupt:
     plot()

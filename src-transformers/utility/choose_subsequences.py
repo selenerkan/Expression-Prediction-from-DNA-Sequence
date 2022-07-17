@@ -8,6 +8,20 @@ train_miss_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_missing
 train_subset_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/train_subsequences.txt"
 valid_subset_dir = "/Users/goktug/PycharmProjects/ML4RG Project/data/valid_subsequences.txt" """
 
+train_dir = "../../data/train_sequences.txt"
+train_float_dir = "../../data/train_float_sequences.txt"
+
+def floating_sequences(train_dir, train_float_dir):
+
+    file1 = open(train_dir, "r")
+    file2 = open(train_float_dir, "w")
+
+    for line in file1:
+        sample = line.strip("\n").split("\t")
+        if len(sample) == 2:
+            seq, label = sample[0], sample[1]
+            if int(float(label)) != float(label):
+                file2.write(seq + "\t" + label + "\n")
 
 def complete_sequences(train_dir, train_comp_dir):
 
@@ -112,7 +126,8 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
     file3.close()
     file4.close()
 
-
-#complete_sequences(train_dir, train_comp_dir)
-#missing_sequences(train_dir, dir3)
-#create_sub_dataset(200_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
+if __name__=="__main__":
+    #complete_sequences(train_dir, train_comp_dir)
+    floating_sequences(train_dir, train_float_dir)
+    #missing_sequences(train_dir, dir3)
+    #create_sub_dataset(200_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
