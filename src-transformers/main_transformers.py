@@ -10,7 +10,7 @@ from utility.choose_subsequences import complete_sequences, missing_sequences, c
 from torchsummary import summary
 import torchmetrics.functional as metrics_F
 
-from transformer_model import ConvTransformer, TransformerNet
+from transformer_model import ConvTransformer#, TransformerNet
 from dataset import PromoterDataset, collate_batch
 
 np.random.seed(0)
@@ -23,9 +23,9 @@ print("RUNS ON:",device)
 
 MAX_EPOCHS = 50
 BATCH_SIZE = 1024
-MAX_SEQ = 1_000_000
-LR = 0.001
-REG = 0.001
+MAX_SEQ = 400_000
+LR = 0.0005
+REG = 0.0001
 
 root_dir = "../data"
 train_filename = "train_subsequences.txt"
@@ -40,7 +40,7 @@ valid_subset_dir = root_dir + "/valid_subsequences.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
+create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.9)
 
 # *********************************************************************************************************
 
