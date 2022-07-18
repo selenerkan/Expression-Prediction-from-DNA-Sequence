@@ -3,6 +3,18 @@ import numpy as np
 
 np.random.seed(0)
 
+def floating_sequences(train_dir, train_float_dir):
+
+    file1 = open(train_dir, "r")
+    file2 = open(train_float_dir, "w")
+
+    for line in file1:
+        sample = line.strip("\n").split("\t")
+        if len(sample) == 2:
+            seq, label = sample[0], sample[1]
+            if int(float(label)) != float(label):
+                file2.write(seq + "\t" + label + "\n")
+
 def complete_sequences(train_dir, train_comp_dir):
 
     """
@@ -99,6 +111,33 @@ def choose_categorized_sequences(cat_sequences, num_requested_seq):
 
     return all_sequences
 
+
+def choose_categorized_sequences2(cat_sequences, num_requested_seq):
+
+    temp = []
+    num_categories = 0
+    for category in cat_sequences:
+        if len(category) != 0:
+            temp.append(category)
+            num_categories += 1
+
+    cat_sequences = temp
+
+    remainder = num_requested_seq % num_categories
+    division = num_requested_seq // num_categories  # average number of sequences that will be chosen from each category
+    all_sequences = []
+
+    for category in cat_sequences:
+        replace = True if len(category) < division else False  # replacing for only the categories with sequences less than ave.
+        random_indices = np.random.choice(range(len(category)), division, replace=replace)
+        chosen_sequences = [category[j] for j in random_indices]
+        all_sequences += chosen_sequences
+
+    random_indices = np.random.choice(range(len(cat_sequences[0])), remainder, replace=False)
+    chosen_sequences = [cat_sequences[0][j] for j in random_indices]
+    all_sequences += chosen_sequences
+
+    return all_sequences
 
 def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio):
 

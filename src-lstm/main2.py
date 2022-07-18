@@ -18,27 +18,33 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 np.random.seed(23)
 torch.manual_seed(23)
+# *************************************** PARAMETERS **************************************************
+
+MAX_EPOCHS = 50
+BATCH_SIZE = 1024
+MAX_SEQ = 1_000_000
+LR = 0.001
+REG = 0.0001
 
 # *************************************** DATA CREATION **************************************************
-train_dir = "../data/train_sequences.txt"
-train_comp_dir = "../data/train_comp_sequences_seed23.txt"
-train_miss_dir = "../data/train_missing_sequences_seed23.txt"
-train_subset_dir = "../data/train_subsequences_seed23.txt"
-valid_subset_dir = "../data/valid_subsequences_seed23.txt"
+train_dir = "../data/train_float_sequences.txt"
+train_comp_dir = "../data/train_comp_float_sequences_seed23.txt"
+train_miss_dir = "../data/train_missing_float_sequences_seed23.txt"
+train_subset_dir = "../data/train_float_subsequences_seed23.txt"
+valid_subset_dir = "../data/valid_float_subsequences_seed23.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(400_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.9)
+create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.9)
 
 # *********************************************************************************************************
-n_max_epochs = 20
 train_loss_list, valid_loss_list = [], []
 train_r2_list, valid_r2_list = [], []
 
 def training_loop(n_max_epochs):
     root_dir = "../data"
-    train_filename = "train_subsequences_seed23.txt"
-    valid_filename = "valid_subsequences_seed23.txt"
+    train_filename = "train_float_subsequences_seed23.txt"
+    valid_filename = "valid_float_subsequences_seed23.txt"
 
     #train_dataset = PromoterSeqDataset(root_dir, filename, transforms)
     #loader = DataLoader(train_dataset, batch_size=64, collate_fn=collate_batch)
@@ -46,8 +52,8 @@ def training_loop(n_max_epochs):
     train_set = PromoterDataset(root_dir, train_filename)
     valid_set = PromoterDataset(root_dir, valid_filename)
 
-    train_loader = DataLoader(train_set, batch_size=1024, collate_fn=collate_batch)
-    valid_loader = DataLoader(valid_set, batch_size=1024, collate_fn=collate_batch)
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
+    valid_loader = DataLoader(valid_set, batch_size=BATCH_SIZE, collate_fn=collate_batch)
 
     model = PromoterNet(cnn_dropout=0.2)
     model = model.to(device)
@@ -55,7 +61,7 @@ def training_loop(n_max_epochs):
 
     loss_fn = torch.nn.MSELoss()
     r2_metric_fn = metrics_F.r2_score
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=5e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
 
     file = open("./train_results.txt", "w+")
     early_stopping = EarlyStopping(patience=8)
@@ -117,7 +123,7 @@ def training_loop(n_max_epochs):
             print(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}")
             file.write(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}\n")
         #del loss, outputs
-        save_dir = "./models-seed23-dropout"
+        save_dir = "./models-seed23-floats-only-stratified-split"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         save_file_name = "model4-" + str(epoch) + ".pth"
@@ -136,7 +142,7 @@ def plot():
     plt.show()
 
 try:
-    epoch = training_loop(n_max_epochs)
+    epoch = training_loop(MAX_EPOCHS)
     plot()
 
 except KeyboardInterrupt:
