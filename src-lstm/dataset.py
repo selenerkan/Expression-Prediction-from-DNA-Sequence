@@ -40,7 +40,7 @@ def collate_batch(batch):
     for (_sequence, _label) in batch:
         seq_list.append(transform(_sequence))
         label_list.append(np.array(_label, np.float32))
-        comp_seq_list.append(transform(complement_strand(_sequence)))
+        #comp_seq_list.append(transform(complement_strand(_sequence)))
 
     sequences = np.array(seq_list + comp_seq_list)
     labels = np.array(label_list)

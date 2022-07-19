@@ -131,13 +131,13 @@ def training_loop(n_max_epochs):
         linecache.clearcache()
 
 def plot():
-    plt.plot(range(1, len(train_loss_list)), train_loss_list, color="blue", label="training_loss")
-    plt.plot(range(1, len(valid_loss_list)), valid_loss_list, color="red", label="validation_loss")
+    plt.plot(range(1, len(train_loss_list)+1), train_loss_list, color="blue", label="training_loss")
+    plt.plot(range(1, len(valid_loss_list)+1), valid_loss_list, color="red", label="validation_loss")
     plt.legend()
     plt.show()
 
-    plt.plot(range(1, len(train_r2_list)), train_r2_list, color="blue", label="training_r2")
-    plt.plot(range(1, len(valid_r2_list)), valid_r2_list, color="red", label="validation_r2")
+    plt.plot(range(1, len(train_r2_list)+1), train_r2_list, color="blue", label="training_r2")
+    plt.plot(range(1, len(valid_r2_list)+1), valid_r2_list, color="red", label="validation_r2")
     plt.legend()
     plt.show()
 
