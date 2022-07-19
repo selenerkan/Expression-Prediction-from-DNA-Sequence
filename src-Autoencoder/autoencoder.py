@@ -43,7 +43,7 @@ class Decoder(nn.Module):
         self.upsample2 = nn.Upsample(size=(128, 48), mode="bicubic")  # Input: (18, 128) Output: (48, 128)
         self.conv2 = nn.Conv1d(in_channels=128, out_channels=64, kernel_size=12, stride=1, padding=1)  # Input: (48, 128) Output: (48, 64)
         self.upsample3 = nn.Upsample(size=(64, 112), mode="bicubic")  # Input: (48, 64) Output: (112, 64)
-        self.conv3 = nn.Conv1d(in_channels=64, out_channels=5, kernel_size=8, stride=1, padding=1)  # Input: (112, 64) Output: (112, 5)
+        self.conv3 = nn.Conv1d(in_channels=64, out_channels=5, kernel_size=9, stride=1, padding=1)  # Input: (112, 64) Output: (112, 5)
 
     def forward(self, x):
 

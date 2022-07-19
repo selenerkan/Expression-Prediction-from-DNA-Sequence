@@ -6,6 +6,7 @@ import time
 import torch
 
 from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
 from torch.utils.data import DataLoader
 
 from autoencoder import Autoencoder
@@ -50,25 +51,39 @@ def training_loop():
     model.eval()
     latent_list = []
     labels = []
+    all_seqs = []
     with torch.no_grad():
         for i, data in enumerate(train_loader):
-            seqs, _, label = data[0], data[1], data[2]
+            seqs, label = data[0], data[1]
+            all_seqs.append(seqs)
             outputs = model.encoder(seqs).flatten(start_dim=1)
             latent_list.append(outputs.cpu())
             labels.append(label.cpu())
 
         latent_list = torch.cat(latent_list).numpy()
         labels = torch.cat(labels).numpy()
-
+    all_seqs=torch.cat(all_seqs,dim=0).cpu().numpy()
     print(latent_list.shape)
     print(labels.shape)
-    X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(latent_list)
-    # for i in range(18):
-    #     X_indices = np.where(np.floor(labels)==i)
-    #     plt.scatter(X_embedded[X_indices, 0], X_embedded[X_indices, 1],label=labels[X_indices],c=labels[X_indices], cmap='Blues', edgecolors="black")
-    plt.scatter(X_embedded[:,0],X_embedded[:,1],label=labels,c=labels,cmap="Blues",edgecolors="black")
-    plt.colorbar()
+    #X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(latent_list)
+    labels = KMeans(n_clusters=8, algorithm="auto",max_iter=500).fit_predict(latent_list)
+    #plt.scatter(X_embedded[:,0],X_embedded[:,1],label=labels,c=labels,cmap="Blues",edgecolors="black")
+    #plt.scatter(X_embedded[:,0],X_embedded[:,1],label=labels,c=labels)
+    #plt.colorbar()
+    #plt.show()
+    all_selected = []
+    for i in range(8):
+        indices_from_cluster = np.random.choice(np.arange(10_000)[np.where(labels==i)],100) # p=distance to the closest test sample?
+        all_selected.append(latent_list[indices_from_cluster])
+
+    all_selected = np.array(all_selected)
+    all_selected=all_selected.reshape(all_selected.shape[0]*all_selected.shape[1],all_selected.shape[2])
+    X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(all_selected)
+    plt.scatter(X_embedded[:,0],X_embedded[:,1])
     plt.show()
+
+
+
 
 def plot():
     plt.plot(range(1, len(train_loss_list)), train_loss_list, color="blue", label="training_loss")
