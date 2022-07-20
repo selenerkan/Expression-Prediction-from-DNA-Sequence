@@ -5,43 +5,48 @@ import os
 import time
 import torch
 
+import pickle
 from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 from torch.utils.data import DataLoader
 
 from autoencoder import Autoencoder
 from utility.choose_subsequences import complete_sequences, missing_sequences, create_sub_dataset
 from autoencoder_dataset import PromoterDataset, collate_batch
 
+from tqdm import tqdm
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 np.random.seed(23)
 torch.manual_seed(23)
 
+MAX_SAMPLES = 6_739_258
+MAX_SAMPLES = 5000
+SAMPLES_PER_CLUSTER = 1000
+N_CLUSTERS = 8
+BATCH_SIZE=1024
+
 # *************************************** DATA CREATION **************************************************
 train_dir = "../data/train_sequences.txt"
 train_comp_dir = "../data/train_comp_sequences_half.txt"
 train_miss_dir = "../data/train_missing_sequences_half.txt"
+
 train_subset_dir = "../data/train_subsequences_half.txt"
-valid_subset_dir = "../data/valid_subsequences_half.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(10_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 1.0)
+create_sub_dataset(MAX_SAMPLES, 0, train_comp_dir, train_miss_dir, train_subset_dir)
 
 # *********************************************************************************************************
-n_max_epochs = 50
-train_loss_list, valid_loss_list = [], []
-train_r2_list, valid_r2_list = [], []
 
-
-def training_loop():
+def sample_selection():
     root_dir = "../data"
     train_filename = "train_subsequences_half.txt"
 
     train_set = PromoterDataset(root_dir, train_filename)
 
-    train_loader = DataLoader(train_set, batch_size=1024, collate_fn=collate_batch)
+    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, collate_fn=collate_batch,shuffle=False)
 
     model = Autoencoder()
     model = model.to(device)
@@ -50,50 +55,48 @@ def training_loop():
 
     model.eval()
     latent_list = []
-    labels = []
-    all_seqs = []
+    
+    #labels = []
+    #all_seqs = []
+    cluster_model = MiniBatchKMeans(n_clusters=N_CLUSTERS,max_iter=500,batch_size=BATCH_SIZE,)
+    epoch_iterator = tqdm(
+            train_loader, desc="Training (X / X Steps) (loss=X.X)", dynamic_ncols=True
+        )
     with torch.no_grad():
-        for i, data in enumerate(train_loader):
-            seqs, label = data[0], data[1]
-            all_seqs.append(seqs)
+        for i, data in enumerate(epoch_iterator):
+            epoch_iterator.set_description(
+                "Extracting latent space clusters (%d / %d Steps)"
+                % (i, MAX_SAMPLES//BATCH_SIZE)
+            )
+            seqs = data[0]
             outputs = model.encoder(seqs).flatten(start_dim=1)
-            latent_list.append(outputs.cpu())
-            labels.append(label.cpu())
+            #latent_list.append(outputs.cpu())
+            cluster_model = cluster_model.partial_fit(outputs.cpu().numpy())
+        #latent_list = torch.cat(latent_list,dim=0).numpy()
+    # Cluster the latent space.
+    print("Samples clustered !")
+    with open("cluster_model.pkl", "wb") as f:
+        pickle.dump(cluster_model, f)
+    # with open("cluster_model.pkl", "rb") as f:
+    #     loaded_model = pickle.load(f)
 
-        latent_list = torch.cat(latent_list).numpy()
-        labels = torch.cat(labels).numpy()
-    all_seqs=torch.cat(all_seqs,dim=0).cpu().numpy()
-    print(latent_list.shape)
-    print(labels.shape)
-    #X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(latent_list)
-    labels = KMeans(n_clusters=8, algorithm="auto",max_iter=500).fit_predict(latent_list)
-    #plt.scatter(X_embedded[:,0],X_embedded[:,1],label=labels,c=labels,cmap="Blues",edgecolors="black")
-    #plt.scatter(X_embedded[:,0],X_embedded[:,1],label=labels,c=labels)
-    #plt.colorbar()
-    #plt.show()
-    all_selected = []
-    for i in range(8):
-        indices_from_cluster = np.random.choice(np.arange(10_000)[np.where(labels==i)],100) # p=distance to the closest test sample?
-        all_selected.append(latent_list[indices_from_cluster])
+    # clusters = loaded_model.predict(latent_list)
 
-    all_selected = np.array(all_selected)
-    all_selected=all_selected.reshape(all_selected.shape[0]*all_selected.shape[1],all_selected.shape[2])
-    X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(all_selected)
-    plt.scatter(X_embedded[:,0],X_embedded[:,1])
-    plt.show()
+    # clusters = loaded_model.predict(latent_list)
+    # Collect samples.
+    # all_selected = []
+    # for c_id in range(N_CLUSTERS):
+    #     # Randomly select samples from each cluster equally.
+    #     indices_from_cluster = np.random.choice(np.arange(MAX_SAMPLES)[np.where(labels==c_id)], SAMPLES_PER_CLUSTER) # p=distance to the closest test sample?
+    #     #all_selected.append(latent_list[indices_from_cluster])
+    #     all_selected.append(indices_from_cluster)
+    # all_selected = np.array(all_selected)
+    # # Concat sample sets selected for each cluster.
+    # #all_selected=all_selected.reshape(all_selected.shape[0]*all_selected.shape[1],all_selected.shape[2])
+    # np.save("selected_sample_indices.npy",all_selected)
 
+    # X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(latent_list)
+    # plt.scatter(X_embedded[:,0],X_embedded[:,1],c=clusters,label=clusters)
+    # plt.show()
 
-
-
-def plot():
-    plt.plot(range(1, len(train_loss_list)), train_loss_list, color="blue", label="training_loss")
-    plt.plot(range(1, len(valid_loss_list)), valid_loss_list, color="red", label="validation_loss")
-    plt.legend()
-    plt.show()
-
-    plt.plot(range(1, len(train_r2_list)), train_r2_list, color="blue", label="training_r2")
-    plt.plot(range(1, len(valid_r2_list)), valid_r2_list, color="red", label="validation_r2")
-    plt.legend()
-    plt.show()
-
-epoch = training_loop()
+sample_selection()

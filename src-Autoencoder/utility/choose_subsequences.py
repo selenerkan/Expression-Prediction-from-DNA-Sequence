@@ -52,14 +52,13 @@ def missing_sequences(train_dir, train_miss_dir):
     file2.close()
 
 
-def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio):
+def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir):
 
     comp_sequences = []
     miss_sequences = []
 
     # randomly chosen sequences will be written into these two files
     file3 = open(train_subset_dir, "w")
-    file4 = open(valid_subset_dir, "w")
 
     if num_comp_seq > 0:
         # All sequences in "train_comp_sequences.txt" are read and stored in the list
@@ -105,12 +104,8 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
     # train sequences are read into "train_subsequences.txt" file
     for seq in sequences:
         file3.write(seq)
-    # train sequences are read into "valid_subsequences.txt" file
-    # for seq in seq_test:
-    #     file4.write(seq)
 
     file3.close()
-    file4.close()
 
 
 #complete_sequences(train_dir, train_comp_dir)
