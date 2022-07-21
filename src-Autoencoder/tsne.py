@@ -1,11 +1,8 @@
-import linecache
-import matplotlib.pyplot as plt
 import numpy as np
-import os
-import time
 import torch
 
 import pickle
+import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.cluster import MiniBatchKMeans
 from torch.utils.data import DataLoader
@@ -40,7 +37,7 @@ create_sub_dataset(MAX_SAMPLES, 0, train_comp_dir, train_miss_dir, train_subset_
 
 # *********************************************************************************************************
 
-def sample_selection():
+def train_clustering():
     root_dir = "../data"
     train_filename = "train_subsequences_half.txt"
 
@@ -54,10 +51,7 @@ def sample_selection():
     model.load_state_dict(torch.load("./models-seed23/model-49.pth"))
 
     model.eval()
-    latent_list = []
-    
-    #labels = []
-    #all_seqs = []
+
     cluster_model = MiniBatchKMeans(n_clusters=N_CLUSTERS,max_iter=500,batch_size=BATCH_SIZE,)
     epoch_iterator = tqdm(
             train_loader, desc="Training (X / X Steps) (loss=X.X)", dynamic_ncols=True
@@ -70,33 +64,14 @@ def sample_selection():
             )
             seqs = data[0]
             outputs = model.encoder(seqs).flatten(start_dim=1)
-            #latent_list.append(outputs.cpu())
             cluster_model = cluster_model.partial_fit(outputs.cpu().numpy())
-        #latent_list = torch.cat(latent_list,dim=0).numpy()
     # Cluster the latent space.
     print("Samples clustered !")
     with open("cluster_model.pkl", "wb") as f:
         pickle.dump(cluster_model, f)
-    # with open("cluster_model.pkl", "rb") as f:
-    #     loaded_model = pickle.load(f)
-
-    # clusters = loaded_model.predict(latent_list)
-
-    # clusters = loaded_model.predict(latent_list)
-    # Collect samples.
-    # all_selected = []
-    # for c_id in range(N_CLUSTERS):
-    #     # Randomly select samples from each cluster equally.
-    #     indices_from_cluster = np.random.choice(np.arange(MAX_SAMPLES)[np.where(labels==c_id)], SAMPLES_PER_CLUSTER) # p=distance to the closest test sample?
-    #     #all_selected.append(latent_list[indices_from_cluster])
-    #     all_selected.append(indices_from_cluster)
-    # all_selected = np.array(all_selected)
-    # # Concat sample sets selected for each cluster.
-    # #all_selected=all_selected.reshape(all_selected.shape[0]*all_selected.shape[1],all_selected.shape[2])
-    # np.save("selected_sample_indices.npy",all_selected)
 
     # X_embedded = TSNE(n_components=2, learning_rate='auto', init='random').fit_transform(latent_list)
     # plt.scatter(X_embedded[:,0],X_embedded[:,1],c=clusters,label=clusters)
     # plt.show()
 
-sample_selection()
+train_clustering()

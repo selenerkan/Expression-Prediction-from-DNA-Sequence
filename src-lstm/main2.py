@@ -22,20 +22,20 @@ torch.manual_seed(23)
 
 MAX_EPOCHS = 50
 BATCH_SIZE = 1024
-MAX_SEQ = 1_000_000
+MAX_SEQ = 120000
 LR = 0.001
 REG = 0.0001
 
 # *************************************** DATA CREATION **************************************************
-train_dir = "../data/train_float_sequences.txt"
-train_comp_dir = "../data/train_comp_float_sequences_seed23.txt"
-train_miss_dir = "../data/train_missing_float_sequences_seed23.txt"
-train_subset_dir = "../data/train_float_subsequences_seed23.txt"
-valid_subset_dir = "../data/valid_float_subsequences_seed23.txt"
+train_dir = "../data/train_cluster_float_sequences.txt"
+train_comp_dir = "../data/train_comp_clustered_sequences_seed23.txt"
+train_miss_dir = "../data/train_missing_clustered_sequences_seed23.txt"
+train_subset_dir = "../data/train_clustered_subsequences_seed23.txt"
+valid_subset_dir = "../data/valid_clustered_subsequences_seed23.txt"
 
 complete_sequences(train_dir, train_comp_dir)
 missing_sequences(train_dir, train_miss_dir)
-create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.9)
+create_sub_dataset(MAX_SEQ, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
 
 # *********************************************************************************************************
 train_loss_list, valid_loss_list = [], []
@@ -43,8 +43,8 @@ train_r2_list, valid_r2_list = [], []
 
 def training_loop(n_max_epochs):
     root_dir = "../data"
-    train_filename = "train_float_subsequences_seed23.txt"
-    valid_filename = "valid_float_subsequences_seed23.txt"
+    train_filename = "train_clustered_subsequences_seed23.txt"
+    valid_filename = "valid_clustered_subsequences_seed23.txt"
 
     #train_dataset = PromoterSeqDataset(root_dir, filename, transforms)
     #loader = DataLoader(train_dataset, batch_size=64, collate_fn=collate_batch)
@@ -63,7 +63,7 @@ def training_loop(n_max_epochs):
     r2_metric_fn = metrics_F.r2_score
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
 
-    file = open("./train_results.txt", "w+")
+    file = open("./train_clustered_results.txt", "w+")
     early_stopping = EarlyStopping(patience=8)
 
     for epoch in range(n_max_epochs):
@@ -123,7 +123,7 @@ def training_loop(n_max_epochs):
             print(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}")
             file.write(f"Validation Epoch {epoch + 1} Loss: {ave_valid_loss:.4f}, R2-Score: {ave_valid_r2:.4f}\n")
         #del loss, outputs
-        save_dir = "./models-seed23-floats-only-stratified-split"
+        save_dir = "./models-seed23-clustered-floats"
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         save_file_name = "model4-" + str(epoch) + ".pth"

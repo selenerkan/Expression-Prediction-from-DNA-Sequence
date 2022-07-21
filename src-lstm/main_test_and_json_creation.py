@@ -41,7 +41,7 @@ test_loader = DataLoader(test_set, batch_size=1024, collate_fn=collate_batch_tes
 with torch.no_grad():
     model = PromoterNet()
     model = model.to(device)
-    PATH = './models-seed23-floats-only-stratified-split/model4-2.pth'
+    PATH = './models-seed23-clustered-floats/model4-20.pth'
     model.load_state_dict(torch.load(PATH))
     model.eval()
 
@@ -52,6 +52,12 @@ with torch.no_grad():
         preds.append(outputs)
         
 preds = torch.cat(preds,dim=0).cpu().numpy()
+import matplotlib.pyplot as plt
+
+# matplotlib histogram
+plt.hist(preds, color = 'blue', edgecolor = 'black',
+         bins = int(180/5))
+plt.show()
 print(preds.shape)
 
 with open('../data/sample_submission.json', 'r') as f:
@@ -62,5 +68,5 @@ PRED_DATA = OrderedDict()
 for i in indices:
     PRED_DATA[str(i)] = float(preds[i])
     
-with open('pred-lstm-floats-no-comp.json', 'w') as f:
+with open('pred-lstm-clusters-floats.json', 'w') as f:
     json.dump(PRED_DATA,f)
