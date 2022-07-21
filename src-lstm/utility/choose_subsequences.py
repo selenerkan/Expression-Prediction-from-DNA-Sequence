@@ -1,7 +1,26 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 
-np.random.seed(0)
+
+def clustered_sequences(train_dir, train_clustered_dir,samples_per_cluster=361, batch_size=20000):
+    from sample_selection import SampleSelector
+    file1 = open(train_dir, "r")
+    all_data = file1.readlines()
+    all_data_len = len(all_data)
+    #file1.seek(0)
+    file2 = open(train_clustered_dir, "w")
+
+    selector = SampleSelector(samples_per_cluster=samples_per_cluster, all_data_len=all_data_len, batch_size=batch_size,train_filename=train_dir.split("/")[-1])
+    selected_indices = selector.forward()
+
+    for idx in selected_indices:
+        line = all_data[idx]
+        sample = line.strip("\n").split("\t")
+        if len(sample) == 2:
+            seq, label = sample[0], sample[1]
+            file2.write(seq + "\t" + label + "\n")
+    file1.close()
+    file2.close()
 
 def floating_sequences(train_dir, train_float_dir):
 
@@ -154,7 +173,9 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # Hence, the labels do not need to be read separately
         file1 = open(train_comp_dir, "r")
         cat_sequences = read_and_split_sequences(file1)
-        comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
+        for seq in cat_sequences:
+            comp_sequences += seq
+        #comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
 
         file1.close()
 
@@ -165,7 +186,9 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # Hence, the labels do not need to be read separately
         file2 = open(train_miss_dir, "r")
         cat_sequences = read_and_split_sequences(file2)
-        miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
+        for seq in cat_sequences:
+            miss_sequences += seq
+        #miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
 
         file2.close()
 
@@ -192,21 +215,29 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
     file4.close()
 
 if __name__=="__main__":
+    # train_dir = "../../data/train_sequences.txt"
+    # train_clustered_dir = "../../data/train_cluster_sequences361samples.txt"
+    # clustered_sequences(train_dir, train_clustered_dir)
 
-    root_dir = "../../data"
+    train_dir = "../../data/train_float_sequences.txt"
+    train_clustered_dir = "../../data/train_cluster_float_sequences.txt"
+    clustered_sequences(train_dir, train_clustered_dir, samples_per_cluster=20000)
 
-    train_dir = root_dir + "/train_sequences.txt"
-    train_comp_dir = root_dir + "/train_comp_sequences_balanced.txt"
-    train_miss_dir = root_dir + "/train_missing_sequences_balanced.txt"
-    train_subset_dir = root_dir + "/train_subsequences_balanced.txt"
-    valid_subset_dir = root_dir + "/valid_subsequences_balanced.txt"
 
-    # open(train_dir, 'a').close()
-    # open(train_comp_dir, 'a').close()
-    # open(train_miss_dir, 'a').close()
-    # open(train_subset_dir, 'a').close()
-    # open(valid_subset_dir, 'a').close()
+    # root_dir = "../../data"
 
-    complete_sequences(train_dir, train_comp_dir)
-    missing_sequences(train_dir, train_miss_dir)
-    create_sub_dataset(100_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
+    # train_dir = root_dir + "/train_sequences.txt"
+    # train_comp_dir = root_dir + "/train_comp_sequences_balanced.txt"
+    # train_miss_dir = root_dir + "/train_missing_sequences_balanced.txt"
+    # train_subset_dir = root_dir + "/train_subsequences_balanced.txt"
+    # valid_subset_dir = root_dir + "/valid_subsequences_balanced.txt"
+
+    # # open(train_dir, 'a').close()
+    # # open(train_comp_dir, 'a').close()
+    # # open(train_miss_dir, 'a').close()
+    # # open(train_subset_dir, 'a').close()
+    # # open(valid_subset_dir, 'a').close()
+
+    # complete_sequences(train_dir, train_comp_dir)
+    # missing_sequences(train_dir, train_miss_dir)
+    # create_sub_dataset(100_000, 0, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, 0.8)
