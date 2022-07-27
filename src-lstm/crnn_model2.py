@@ -5,22 +5,26 @@ import torch.nn.functional as F
 
 class PromoterNet(nn.Module):
 
-    def __init__(self):
+    def __init__(self, cnn_dropout=0.2):
         super().__init__()
         # first layer num_filters = 64
         # larger kernel size
         # no lstm at the top of transformer
         # we should make sure all receptive fields are covered
-        self.conv1 = nn.Conv1d(in_channels=5, out_channels=512, kernel_size=22, stride=6)  # Feature Maps: (16, 512)
-        self.pool1 = nn.MaxPool1d(kernel_size=4, stride=4)  # Feature Maps: (4, 512)
-        self.drop1 = nn.Dropout(p=0.2)
-        self.lstm = nn.LSTM(input_size=512 * 2, hidden_size=256, num_layers=1, batch_first=True, bidirectional=True)
+        self.conv1 = nn.Conv1d(in_channels=5, out_channels=64, kernel_size=16, stride=3)  # Feature Maps: (16, 512)
+        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (4, 512)
+        self.drop1 = nn.Dropout(p=cnn_dropout)
+        self.conv2 = nn.Conv1d(in_channels=64, out_channels=128, kernel_size=6, stride=1)  # Feature Maps: (16, 512)
+        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)  # Feature Maps: (4, 512)
+        self.drop2 = nn.Dropout(p=cnn_dropout)
+        self.lstm = nn.LSTM(input_size=256, hidden_size=128, num_layers=1, batch_first=True, bidirectional=True)
 
         self.flatten = nn.Flatten()  # Feature Vectors: (4 * Hout * D, 1) = (4 * 256 * 2, 1) = (2048, 1)
-        self.fc = nn.Linear(2048, 1)  # input space = lstm hidden size * 2
+        self.fc = nn.Linear(1280, 1)  # input space = lstm hidden size * 2
 
     def forward(self, x):
         x = self.drop1(self.pool1(F.relu(self.conv1(x))))
+        x = self.drop2(self.pool2(F.relu(self.conv2(x))))
 
         batch_size = x.shape[0]  # 1024
         half = int(batch_size / 2)

@@ -1,6 +1,57 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
+from Bio.GenBank import FeatureParser
+from Bio.Align import PairwiseAligner
+from tqdm import tqdm
 
+def sequence_features(train_dir):
+
+    with open("../../data/yeast pTpA GPRA vector with N80.gb") as file_handle:
+        parser = FeatureParser()
+        seq_record = parser.parse(file_handle)
+
+    aligner = PairwiseAligner()
+    aligner.mode = 'global'
+    aligner.match_score = 1
+    aligner.mismatch_score = -3
+    aligner.open_gap_score = -5
+    aligner.extend_gap_score = -2
+    aligner.query_right_open_gap_score = 0
+    aligner.query_left_open_gap_score = 0
+    aligner.query_right_extend_gap_score = 0
+    aligner.query_left_extend_gap_score = 0
+
+
+    file1 = open(train_dir, "r")
+    tr_data = file1.readlines()
+
+    all_features,all_complement_needs=[],[]
+    for idx in tqdm(range(len(tr_data))):
+        line = tr_data[idx]
+        sample = line.strip("\n").split("\t")
+        if len(sample) == 2:
+            seq, label = sample[0], sample[1]
+
+            alignments = aligner.align(seq_record.seq,seq[17:-13])
+            al_start = alignments[0].aligned[0][0][0]
+            al_end = alignments[0].aligned[0][-1][-1]
+
+            seq_features_one_hot = np.zeros(len(seq_record.features),dtype=np.int32)
+            need_complement = np.zeros(len(seq_record.features),dtype=np.int32)
+            for i,feature in enumerate(seq_record.features):
+                if int(feature.location.start) > al_end or int(feature.location.end) < al_start:
+                    # No overlap
+                    continue
+                else:
+                    if feature.strand == -1:
+                        need_complement[i] = 1
+                    seq_features_one_hot[i] = 1
+            all_features.append(seq_features_one_hot)
+            all_complement_needs.append(need_complement)
+    all_features = np.array(all_features)
+    all_complement_needs = np.array(all_complement_needs)
+    np.save("../../data/test_features.npy",all_features)
+    np.save("../../data/test_complement_needs.npy",all_complement_needs)
 
 def clustered_sequences(train_dir, train_clustered_dir,samples_per_cluster=361, batch_size=20000):
     from sample_selection import SampleSelector
@@ -158,7 +209,7 @@ def choose_categorized_sequences2(cat_sequences, num_requested_seq):
 
     return all_sequences
 
-def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio):
+def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio, auto_balance=True):
 
     comp_sequences = []
     miss_sequences = []
@@ -172,10 +223,13 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # The sequences are read with their labels; line-by-line reading is done.
         # Hence, the labels do not need to be read separately
         file1 = open(train_comp_dir, "r")
-        cat_sequences = read_and_split_sequences(file1)
-        for seq in cat_sequences:
-            comp_sequences += seq
-        #comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
+        if auto_balance:
+            cat_sequences = read_and_split_sequences(file1)
+            comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
+        else:
+            comp_sequences = file1.readlines()
+            random_indices = np.random.choice(range(len(comp_sequences)), num_comp_seq)
+            comp_sequences = [comp_sequences[i] for i in random_indices]
 
         file1.close()
 
@@ -185,10 +239,13 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # The sequences are read with their labels; line-by-line reading is done.
         # Hence, the labels do not need to be read separately
         file2 = open(train_miss_dir, "r")
-        cat_sequences = read_and_split_sequences(file2)
-        for seq in cat_sequences:
-            miss_sequences += seq
-        #miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
+        if auto_balance:
+            cat_sequences = read_and_split_sequences(file2)
+            miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
+        else:
+            miss_sequences = file2.readlines()
+            random_indices = np.random.choice(range(len(miss_sequences)), num_miss_seq)
+            miss_sequences = [miss_sequences[i] for i in random_indices]
 
         file2.close()
 
@@ -219,10 +276,11 @@ if __name__=="__main__":
     # train_clustered_dir = "../../data/train_cluster_sequences361samples.txt"
     # clustered_sequences(train_dir, train_clustered_dir)
 
-    train_dir = "../../data/train_float_sequences.txt"
-    train_clustered_dir = "../../data/train_cluster_float_sequences.txt"
-    clustered_sequences(train_dir, train_clustered_dir, samples_per_cluster=20000)
-
+    train_dir = "../../data/train_sequences.txt"
+    train_clustered_dir = "../../data/train_cluster_100ksequences.txt"
+    
+    clustered_sequences(train_dir, train_clustered_dir, samples_per_cluster=100000)
+    #sequence_features(train_dir)
 
     # root_dir = "../../data"
 

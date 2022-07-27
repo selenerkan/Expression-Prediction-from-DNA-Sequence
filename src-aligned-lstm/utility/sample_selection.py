@@ -12,10 +12,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class SampleSelector():
     def __init__(self, samples_per_cluster, all_data_len, batch_size, n_clusters=8, root_dir="../../data", train_filename="train_sequences.txt") -> None:
         self.core_model = Autoencoder().to(device)
-        self.core_model.load_state_dict(torch.load("../../../results/models-seed23-autoencoder/model-49.pth"))
+        self.core_model.load_state_dict(torch.load("../../src-Autoencoder/models-seed23/model-49.pth"))
         self.core_model.eval()
 
-        with open("../../../results/cluster_model.pkl", "rb") as f:
+        with open("../../src-Autoencoder/cluster_model.pkl", "rb") as f:
             self.clustering_model = pickle.load(f)
 
         self.N_CLUSTERS = n_clusters

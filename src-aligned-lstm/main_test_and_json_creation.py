@@ -5,7 +5,7 @@ import numpy as np
 from collections import OrderedDict
 from torch.utils.data import DataLoader
 
-from crnn_model2 import PromoterNet
+from crnn_model import PromoterNet
 from dataset import PromoterDataset, transform, complement_strand
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -24,7 +24,7 @@ def collate_batch_test(batch):
     for (_sequence, _label) in batch:
         seq_list.append(transform(_sequence))
         label_list.append(np.array(0, np.float32))
-        comp_seq_list.append(transform(complement_strand(_sequence)))
+        #comp_seq_list.append(transform(complement_strand(_sequence)))
 
     sequences = np.array(seq_list + comp_seq_list)
     labels = np.array(label_list)
@@ -41,7 +41,7 @@ test_loader = DataLoader(test_set, batch_size=1024, collate_fn=collate_batch_tes
 with torch.no_grad():
     model = PromoterNet()
     model = model.to(device)
-    PATH = './models-seed23-cluster_balanced/model4-47.pth'
+    PATH = './models-seed23-balanced-data/model4-199.pth'
     model.load_state_dict(torch.load(PATH))
     model.eval()
 
@@ -68,5 +68,5 @@ PRED_DATA = OrderedDict()
 for i in indices:
     PRED_DATA[str(i)] = float(preds[i])
     
-with open('pred-lstm-cluster_balanced.json', 'w') as f:
+with open('pred-lstm-balanced-data-overfit.json', 'w') as f:
     json.dump(PRED_DATA,f)

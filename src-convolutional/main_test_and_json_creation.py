@@ -5,7 +5,7 @@ import numpy as np
 from collections import OrderedDict
 from torch.utils.data import DataLoader
 
-from crnn_model2 import PromoterNet
+from model2 import PromoterNet
 from dataset import PromoterDataset, transform, complement_strand
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,7 +41,7 @@ test_loader = DataLoader(test_set, batch_size=1024, collate_fn=collate_batch_tes
 with torch.no_grad():
     model = PromoterNet()
     model = model.to(device)
-    PATH = './models-seed23-cluster_balanced/model4-47.pth'
+    PATH = './models-seed23-balanced400k/model4-12.pth'
     model.load_state_dict(torch.load(PATH))
     model.eval()
 
@@ -68,5 +68,5 @@ PRED_DATA = OrderedDict()
 for i in indices:
     PRED_DATA[str(i)] = float(preds[i])
     
-with open('pred-lstm-cluster_balanced.json', 'w') as f:
+with open('pred-conv-balanced400k.json', 'w') as f:
     json.dump(PRED_DATA,f)

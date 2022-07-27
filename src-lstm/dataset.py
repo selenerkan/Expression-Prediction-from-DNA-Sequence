@@ -11,7 +11,6 @@ from kipoiseq.transforms.functional import one_hot, fixed_len
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
 def transform(seq):
     seq = seq[17:-13]  # remove primers
     padded_seq = fixed_len(seq, 112, "start", "X")
@@ -19,10 +18,11 @@ def transform(seq):
     return one_hot_seq
 
 
-def complement_strand(strand):
+def complement_strand(strand, reverse=True):
     nucleotides = {65: "T", 67: "G", 71: "C", 84: "A", 78: "N", 88: "X"}
     lookup_table = ["" if i not in [65, 67, 71, 78, 84, 88] else nucleotides[i] for i in range(90)]
-
+    if reverse==True:
+        strand = strand[::-1]
     comp_strand = []
     for nuc in strand:
         index = ord(nuc)
@@ -40,7 +40,7 @@ def collate_batch(batch):
     for (_sequence, _label) in batch:
         seq_list.append(transform(_sequence))
         label_list.append(np.array(_label, np.float32))
-        #comp_seq_list.append(transform(complement_strand(_sequence)))
+        comp_seq_list.append(transform(complement_strand(_sequence)))
 
     sequences = np.array(seq_list + comp_seq_list)
     labels = np.array(label_list)

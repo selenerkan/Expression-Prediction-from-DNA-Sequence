@@ -3,6 +3,15 @@ import numpy as np
 from Bio.GenBank import FeatureParser
 from Bio.Align import PairwiseAligner
 from tqdm import tqdm
+from sklearn.model_selection import KFold
+
+
+def get_nfold_split(X, number_of_folds, current_fold_id):
+    kf = KFold(n_splits=number_of_folds)
+    split_indices = kf.split(range(len(X)))
+    train_indices, val_indices = [(list(train), list(val)) for train, val in split_indices][current_fold_id]
+    #Split train and test
+    return train_indices, val_indices
 
 def sequence_features(train_dir):
 
@@ -50,8 +59,8 @@ def sequence_features(train_dir):
             all_complement_needs.append(need_complement)
     all_features = np.array(all_features)
     all_complement_needs = np.array(all_complement_needs)
-    np.save("../../data/test_features.npy",all_features)
-    np.save("../../data/test_complement_needs.npy",all_complement_needs)
+    # np.save("../../data/test_features.npy",all_features)
+    # np.save("../../data/test_complement_needs.npy",all_complement_needs)
 
 def clustered_sequences(train_dir, train_clustered_dir,samples_per_cluster=361, batch_size=20000):
     from sample_selection import SampleSelector
@@ -209,7 +218,7 @@ def choose_categorized_sequences2(cat_sequences, num_requested_seq):
 
     return all_sequences
 
-def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio, auto_balance=True):
+def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_dir, train_subset_dir, valid_subset_dir, train_ratio):
 
     comp_sequences = []
     miss_sequences = []
@@ -223,13 +232,10 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # The sequences are read with their labels; line-by-line reading is done.
         # Hence, the labels do not need to be read separately
         file1 = open(train_comp_dir, "r")
-        if auto_balance:
-            cat_sequences = read_and_split_sequences(file1)
-            comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
-        else:
-            comp_sequences = file1.readlines()
-            random_indices = np.random.choice(range(len(comp_sequences)), num_comp_seq)
-            comp_sequences = [comp_sequences[i] for i in random_indices]
+        cat_sequences = read_and_split_sequences(file1)
+        for seq in cat_sequences:
+            comp_sequences += seq
+        #comp_sequences = choose_categorized_sequences(cat_sequences, num_comp_seq)
 
         file1.close()
 
@@ -239,33 +245,53 @@ def create_sub_dataset(num_comp_seq, num_miss_seq, train_comp_dir, train_miss_di
         # The sequences are read with their labels; line-by-line reading is done.
         # Hence, the labels do not need to be read separately
         file2 = open(train_miss_dir, "r")
-        if auto_balance:
-            cat_sequences = read_and_split_sequences(file2)
-            miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
-        else:
-            miss_sequences = file2.readlines()
-            random_indices = np.random.choice(range(len(miss_sequences)), num_miss_seq)
-            miss_sequences = [miss_sequences[i] for i in random_indices]
+        cat_sequences = read_and_split_sequences(file2)
+        for seq in cat_sequences:
+            miss_sequences += seq
+        #miss_sequences = choose_categorized_sequences(cat_sequences, num_miss_seq)
 
         file2.close()
 
     # n and k numbers of complete and missing sequences are chosen randomly above.
     # The lists of these sequences are combined and shuffled.
     sequences = comp_sequences + miss_sequences
-    np.random.shuffle(sequences)
+    #np.random.shuffle(sequences)
 
     # Shuffled sequence list is divided into train and test (validation).
     # Each line that has been read in if-statements contain both sequence and label
     # Hence, when they are split into train and test, labels would be also split.
     # The list [i for i in range(len(sequences))] is passed as argument so that the function can work.
-    seq_train, seq_test, label_train, label_test = train_test_split(sequences, [i for i in range(len(sequences))],
-                                                                    train_size=train_ratio)
+    # seq_features = np.load("../data/train_cluster_float_features.npy")
+    # is_complement = np.load("../data/train_cluster_float_complement_needs.npy")
+    sequences = np.array(sequences)
+    # # Select one promoter.
+    # selected_qualifiers = [0,2,3,4,5,25,32,33,34,38,41]
+    # sequences = sequences[np.where(seq_features.max(axis=1)!=0)]
+    # is_complement = is_complement[np.where(seq_features.max(axis=1)!=0)]
+    # seq_features = seq_features[np.where(seq_features.max(axis=1)!=0)]
+
+    # selected_seq, selected_feat, selected_comp = [], [], []
+    # for q in selected_qualifiers:
+    #     selected_seq.append(sequences[np.where(seq_features[:,q]==1)]) 
+    #     selected_feat.append(seq_features[np.where(seq_features[:,q]==1)]) 
+    #     selected_comp.append(is_complement[np.where(seq_features[:,q]==1)]) 
+    # sequences = np.hstack(selected_seq)
+    # sequences = sequences[np.where(seq_features[:,0]==1 )|np.where(seq_features[:,3]==1)]
+    # seq_features = seq_features[np.where(seq_features[:,0]==1)|np.where(seq_features[:,3]==1)]
+    # is_complement = is_complement[np.where(seq_features[:,0]==1)|np.where(seq_features[:,3]==1)]
+    # print(sequences.shape)
+
+    tr_indices, val_indices = get_nfold_split(sequences,5,0)
+    # np.save("../data/tr_cluster_float_complement_needs.npy",is_complement[tr_indices])
+    # np.save("../data/tr_cluster_float_features.npy",seq_features[tr_indices])
+    # np.save("../data/val_cluster_float_complement_needs.npy",is_complement[val_indices])
+    # np.save("../data/val_cluster_float_features.npy",seq_features[val_indices])
 
     # train sequences are read into "train_subsequences.txt" file
-    for seq in seq_train:
+    for seq in sequences[tr_indices]:
         file3.write(seq)
     # train sequences are read into "valid_subsequences.txt" file
-    for seq in seq_test:
+    for seq in sequences[val_indices]:
         file4.write(seq)
 
     file3.close()
@@ -276,11 +302,10 @@ if __name__=="__main__":
     # train_clustered_dir = "../../data/train_cluster_sequences361samples.txt"
     # clustered_sequences(train_dir, train_clustered_dir)
 
-    train_dir = "../../data/train_sequences.txt"
-    train_clustered_dir = "../../data/train_cluster_100ksequences.txt"
-    
-    clustered_sequences(train_dir, train_clustered_dir, samples_per_cluster=100000)
-    #sequence_features(train_dir)
+    train_dir = "../../data/test_sequences.txt"
+    #train_clustered_dir = "../../data/train_cluster_float_sequences.txt"
+    #clustered_sequences(train_dir, train_clustered_dir, samples_per_cluster=20000)
+    sequence_features(train_dir)
 
     # root_dir = "../../data"
 

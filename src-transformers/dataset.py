@@ -44,7 +44,7 @@ def collate_batch(batch):
         comp_seq_list.append(transform(complement_strand(_sequence)))
 
     sequences = np.array(seq_list + comp_seq_list)
-    labels = np.array(label_list + label_list)
+    labels = np.array(label_list)
 
     sequences = torch.tensor(sequences).permute(0, 2, 1).float()
     labels = torch.tensor(labels).float()
