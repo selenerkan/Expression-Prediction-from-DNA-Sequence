@@ -182,7 +182,7 @@ class PromoterDataset(Dataset):
         labels: numpy ndarray
             An array stores the labels for each sample.
         """
-        return pd.read_csv(self.path_to_data, sep="\t")["Expression"].values
+        return pd.read_csv(self.path_to_data, sep="\t", header=None)[1].values
 
     def get_sample_data(self, index: int) -> Tuple[str, str]:
         """
@@ -217,7 +217,7 @@ class PromoterDataset(Dataset):
         all_data: np.ndarray
             A numpy array represents all data.
         """
-        return pd.read_csv(self.path_to_data, sep="\t")["Sequence"].values
+        return pd.read_csv(self.path_to_data, sep="\t", header=None)[0].values
 
     def get_fold_indices(
         self, all_data_size: int, n_folds: int, fold_id: int = 0
