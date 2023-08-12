@@ -1,6 +1,7 @@
 def select_and_create_subdataset(
     input_dir: str, out_dir: str, selection_method: str = "seq_high_precision"
 ) -> None:
+    """Need to add auto balance here."""
     file1 = open(input_dir, "r")
     file2 = open(out_dir, "w")
 
